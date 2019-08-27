@@ -19,7 +19,24 @@
 <template name="init" onError="fault" xmlns="http://ws.apache.org/ns/synapse">
 	<parameter name="token" description="Bot personal token"/>
 	<parameter name="apiUrl" description="telegram bot Api URL"/>
+	<parameter name="webhookUrl" description="Webhook URL for receiving messages"/>
 	<sequence>
-		<!-- Do the init part here-->
+		<property name="uri.var.apiUrl" expression="$func:apiUrl"/>
+		<property name="uri.var.webhookUrl" expression="$func:webhookUrl"/>
+		<!-- If the apiUrl is not specified, set the default value as https://api.twitter.com -->
+		<filter source="boolean(get-property('uri.var.apiUrl'))" regex="true">
+			<then>
+				<property name="uri.var.apiUrl" expression="fn:concat(get-property('uri.var.apiUrl'),'/bot',$func:token)"/>
+			</then>
+			<else>
+				<property name="uri.var.apiUrl" expression="fn:concat('https://api.telegram.com/bot', $func:token)"/>
+			</else>
+		</filter>
+		<call>
+			<http method="GET"  uri-template="{uri.var.apiUrl}/getMe"></http>
+		</call>
+		<call>
+			<http method="POST"  uri-template="{uri.var.apiUrl}/setWebhook?url={uri.var.webhookUrl}"></http>
+		</call>
 	</sequence>
 </template>
